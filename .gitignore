@@ -1,0 +1,23 @@
+# Dependencias locales en cualquier carpeta
+**/node_modules/
+
+# Compilaciones y cachés
+/frontend/dist/
+**/.vite/
+**/coverage/
+*.tsbuildinfo
+
+# Datos locales y comprobantes
+/backend/data/
+
+# Configuración privada
+.env
+.env.*
+!.env.example
+
+# Logs y archivos temporales
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+.impeccable/review/
