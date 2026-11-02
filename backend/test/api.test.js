@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {createApp} from '../src/server.js';
+import {appDePrueba as createApp, fetchAutenticado as fetch, limpiarAppsPrueba} from './soporte-mongodb.js';
 import {CATEGORIES, METHODS, localDate} from '../../shared/finance.js';
 
 test('API: capital, crédito, validaciones, comprobante y persistencia', async () => {
@@ -38,6 +38,6 @@ test('API: capital, crédito, validaciones, comprobante y persistencia', async (
     await close();server = await createApp({dataDir});await listen();
     response = await request('state');assert.equal(response.data.capital,96970);assert.equal(response.data.expenses.length,4);
     assert.equal(response.data.categories.length,5);
-  } finally {await close();await rm(dataDir,{recursive:true,force:true});}
+  } finally {await close();await rm(dataDir,{recursive:true,force:true});await limpiarAppsPrueba();}
 });
 

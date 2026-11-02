@@ -1,0 +1,9 @@
+.git
+.arnes
+**/node_modules
+frontend/dist
+backend/data
+**/.env
+**/.env.*
+**/*.log
+progress

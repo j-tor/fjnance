@@ -1,0 +1,13 @@
+# Implementación F2
+
+- Autor: agente principal, rol Implementador; Líder únicamente para registro y memoria compartida.
+- Fecha: 2026-10-31. Aprobación: usuario confirma F2 y excepción F1/F2, sin commit ni push. F1 permanece en_revision; su revisión previa no cubre los cambios posteriores de archivos compartidos.
+- Alcance: esquemas MongoDB v1 de capital/estado, movimientos, suscripciones y comprobantes; prevalidación de documentos existentes y validadores strict/error idempotentes; consultas por recurso y PUT/DELETE de comprobantes; cliente centralizado integrado en flujos actuales; contrato OpenAPI 3.0.3 y README.
+- Archivos de implementación: backend/src/esquemas-mongodb.js, backend/src/persistencia-mongodb.js, backend/src/server.js, frontend/src/api.js, frontend/src/main.jsx, frontend/src/components/Forms.jsx, docs/openapi.json, README.md.
+- Pruebas: backend/test/esquemas-mongodb.test.js, backend/test/recursos-api.test.js y backend/test/cliente-api.test.js. Sin nuevas dependencias ni cambios visuales. Dockerfile añade fuentes del cliente y contrato únicamente a la etapa de pruebas. scripts/verificar.mjs reconoce exclusivamente la excepción explícita F1/F2 registrada, sin desactivar la regla general.
+- Comandos/resultados: node --test backend/test/cliente-api.test.js (0, 2/2); node scripts/verificar.mjs --estado (0); primera verificación completa node scripts/verificar.mjs (0, 12/12 pruebas, ninguna omitida y Vite 29 módulos). Log .arnes/2026-10-31T06-43-40-795Z-39920.log y .arnes/verificacion-F2-implementacion.log.
+- Comprobación adicional del verificador mediante su función real en VM: 5 casos aprobados (excepción registrada, rechazo sin permiso, rechazo de tercera feature activa, rechazo de F1 en_curso, caso normal de una feature activa).
+- Tras la primera suite se completaron pruebas de PNG/JPEG/WebP, consultas frescas desde otra conexión, precisión numérica y límites; se excluyó BSON Decimal128 porque no corresponde a números JS de los contratos actuales y se precisó la nulabilidad del adjunto en OpenAPI. La verificación final corresponde al Revisor.
+- Datos: no se accedió a JSON real ni se migraron documentos reales. Los esquemas conservan estructura F1 y solo agregan validación. Todas las pruebas usan bases UUID y proyecto/volumen Docker aleatorios.
+- Limitaciones: lint/typecheck NO CONFIGURADO; no hay auditor independiente; MongoDB verifica estructura, rangos y catálogos, mientras HTTP valida además firmas, bytes y fechas reales/no futuras. Metadatos y conservación física de adjuntos históricos mantienen límites documentados de F1.
+- Próximo paso: rol Revisor, diff y archivos nuevos, ejecutar arnés completo sobre versión final y entregar evidencia. No commit ni push.

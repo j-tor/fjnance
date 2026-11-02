@@ -1,0 +1,60 @@
+services:
+  mongodb:
+    image: mongo:8.0.16
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USUARIO:?Define MONGO_USUARIO en el proceso}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_CLAVE:?Define MONGO_CLAVE en el proceso}
+    volumes:
+      - datos_mongodb:/data/db
+    networks: [interna]
+    healthcheck:
+      test: [CMD, mongosh, --quiet, --eval, "quit(db.adminCommand('ping').ok ? 0 : 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      MONGODB_URI: mongodb://${MONGO_USUARIO_URI:?Define MONGO_USUARIO_URI codificado para URI}:${MONGO_CLAVE_URI:?Define MONGO_CLAVE_URI codificada para URI}@mongodb:27017/?authSource=admin
+      MONGODB_DATABASE: ${MONGO_BASE:-fjnance}
+    ports:
+      - "127.0.0.1:${PUERTO_BACKEND:-3001}:3001"
+    networks: [interna, entrada]
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 8s
+      retries: 6
+      start_period: 15s
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${PUERTO_FRONTEND:-3002}:80"
+    networks: [entrada]
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1/salud"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+volumes:
+  datos_mongodb:
+networks:
+  interna:
+    internal: true
+  entrada:
+    driver: bridge

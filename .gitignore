@@ -21,3 +21,6 @@
 .DS_Store
 Thumbs.db
 .impeccable/review/
+
+# Logs temporales del arnés de desarrollo
+.arnes/

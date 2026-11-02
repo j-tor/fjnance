@@ -3,10 +3,7 @@
 import {localDate, parseAmount, validateExpense} from '../../../shared/finance.js';
 
 
-export async function api(path, options) {
-  const response = await fetch(`/api/${path}`, options && {method: options.method || 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(options.body)});
-  const data = await response.json(); if (!response.ok) throw new Error(data.error || 'No se pudo guardar.'); return data;
-}
+export {api} from '../api.js';
 export function Icon({name, ...props}) {
   const paths = {overview: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z', plus:'M12 5v14M5 12h14', close:'m6 6 12 12M6 18 18 6', receipt:'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', wallet:'M3 6h17v14H3zM3 6V4h14v2M15 11h6v5h-6z', card:'M3 5h18v14H3zM3 10h18', calendar:'M4 5h16v16H4zM8 3v4M16 3v4M4 11h16'};
   return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}><path d={paths[name] || paths.receipt}/></svg>;

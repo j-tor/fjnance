@@ -7,7 +7,11 @@
     "dev": "node scripts/dev.js",
     "build": "npm --prefix frontend run build",
     "start": "npm --prefix backend start",
-    "test": "npm --prefix backend test"
+    "test": "node scripts/probar-docker.mjs",
+    "docker:up": "node scripts/entorno.mjs up",
+    "docker:stop": "node scripts/entorno.mjs stop",
+    "docker:status": "node scripts/entorno.mjs status",
+    "crear-admin": "node scripts/crear-admin.mjs"
   },
   "engines": {
     "node": ">=22"

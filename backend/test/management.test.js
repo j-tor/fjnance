@@ -1,9 +1,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp, rm, writeFile} from 'node:fs/promises';
+import {mkdtemp, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {createApp} from '../src/server.js';
+import {appDePrueba as createApp, fetchAutenticado as fetch, limpiarAppsPrueba} from './soporte-mongodb.js';
 import {CATEGORIES, METHODS, localDate, monthSummary, nextSubscriptionDate} from '../../shared/finance.js';
 
 test('edición y eliminación recalculan saldos y conservan o retiran comprobantes', async () => {
@@ -30,18 +30,19 @@ test('edición y eliminación recalculan saldos y conservan o retiran comprobant
     assert.equal(result.data.capital,100000);assert.equal(result.data.expenses.length,0);
     assert.equal((await request(`expenses/${id}`,'PUT',withoutReceipt)).status,404);
     assert.equal((await request(`expenses/${id}`,'DELETE',{})).status,404);
-  } finally {await new Promise(resolve=>server.close(resolve));await rm(dir,{recursive:true,force:true});}
+  } finally {await new Promise(resolve=>server.close(resolve));await rm(dir,{recursive:true,force:true});await limpiarAppsPrueba();}
 });
 
-test('suscripciones: migración sin perder gastos, CRUD, pausa y persistencia', async () => {
+test('suscripciones por cuenta: CRUD, pausa y persistencia', async () => {
   const dir = await mkdtemp(path.join(tmpdir(),'fjnance-subscriptions-'));
-  await writeFile(path.join(dir,'finance.json'),JSON.stringify({initialCapital:12500,expenses:[]}));
+
   let server = await createApp({dataDir:dir});
   const listen = () => new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const close = () => new Promise(resolve=>server.close(resolve));await listen();
   async function request(route,method='GET',body) {const res = await fetch(`http://127.0.0.1:${server.address().port}/api/${route}`,{method,headers:{'Content-Type':'application/json'},body:body && JSON.stringify(body)});return {status:res.status,data:await res.json()};}
   try {
-    let result = await request('state');assert.equal(result.data.capital,12500);assert.equal(result.data.subscriptions.length,3);
+    await request('capital','PUT',{amount:'125.00'});
+    let result = await request('state');assert.equal(result.data.capital,12500);assert.equal(result.data.subscriptions.length,0);
     const subscription = {name:'Mi servicio',amount:'25.50',day:31,active:true};
     result = await request('subscriptions','POST',subscription);assert.equal(result.status,201);
     const id = result.data.subscriptions.find(item=>item.name===subscription.name).id;
@@ -51,12 +52,12 @@ test('suscripciones: migración sin perder gastos, CRUD, pausa y persistencia', 
     for (const invalid of [{amount:'0'},{day:32},{day:1.5},{name:'  '},{active:'yes'}]) assert.equal((await request(`subscriptions/${id}`,'PUT',{...subscription,...invalid})).status,400);
     await close();server = await createApp({dataDir:dir});await listen();
     result = await request('state');assert.equal(result.data.subscriptions.find(item=>item.id===id).name,'Nuevo nombre');
-    result = await request(`subscriptions/${id}`,'DELETE',{});assert.equal(result.data.subscriptions.length,3);
+    result = await request(`subscriptions/${id}`,'DELETE',{});assert.equal(result.data.subscriptions.length,0);
     assert.equal((await request(`subscriptions/${id}`,'PUT',subscription)).status,404);
     for (const item of result.data.subscriptions) await request(`subscriptions/${item.id}`,'DELETE',{});
     await close();server = await createApp({dataDir:dir});await listen();
     assert.equal((await request('state')).data.subscriptions.length,0);
-  } finally {await close();await rm(dir,{recursive:true,force:true});}
+  } finally {await close();await rm(dir,{recursive:true,force:true});await limpiarAppsPrueba();}
 });
 
 test('corte mensual ajusta días inexistentes y cambio de año', () => {

@@ -1,0 +1,404 @@
+{
+  "proyecto": "fjnance",
+  "siguiente_id": "F6",
+  "ids_retirados": [],
+  "reglas": {
+    "una_feature_activa": true,
+    "requiere_aprobacion_del_usuario": true,
+    "requiere_revision_aprobada": true,
+    "estados": [
+      "propuesta",
+      "pendiente",
+      "en_curso",
+      "en_revision",
+      "hecha",
+      "bloqueada",
+      "descartada"
+    ]
+  },
+  "features": [
+    {
+      "id": "F1",
+      "titulo": "Ejecutar fjnance con Docker Compose y persistencia en MongoDB",
+      "estado": "hecha",
+      "aprobacion_usuario": "Usuario: crea F1 (2026-10-28); autoriza implementar el alcance propuesto, instalar el driver y levantar contenedores locales; sin commit ni push.",
+      "objetivo": "Levantar la aplicación compilada y MongoDB con un comando, sustituyendo la persistencia JSON de ejecución por MongoDB sin alterar los contratos de la API ni la interfaz.",
+      "alcance": [
+        "Agregar el driver oficial de MongoDB al backend y separar el acceso a datos del servidor HTTP.",
+        "Persistir capital, movimientos, suscripciones y comprobantes en MongoDB; mantener importes en centavos y contratos existentes.",
+        "Adaptar pruebas a bases de datos exclusivas de prueba y conservar pruebas unitarias sin dependencia de datos reales.",
+        "Crear una imagen multietapa que compile React y ejecute el backend sirviendo frontend/dist, y un servicio MongoDB con volumen persistente en Docker Compose.",
+        "Configurar red interna, comprobaciones de salud, espera de disponibilidad, cierre de conexiones y exposición local del puerto 3001.",
+        "Documentar configuración mediante variables del proceso y comandos de arranque, pruebas y parada sin crear ni modificar archivos .env.",
+        "Integrar las validaciones necesarias en el arnés y actualizar la descripción del stack en AGENTS.md al completar el cambio."
+      ],
+      "criterios": [
+        "docker compose config valida la configuración y docker compose up --build -d inicia aplicación y MongoDB saludables; http://localhost:3001 sirve la interfaz y /api/state responde correctamente.",
+        "Las operaciones de capital, movimientos, suscripciones y comprobantes conservan validaciones, códigos HTTP, cálculos e identificadores; las pruebas cubren casos exitosos, entradas inválidas y bordes aplicables.",
+        "Los datos de prueba sobreviven al reinicio de aplicación y MongoDB con el volumen conservado; detener la composición no elimina datos por defecto.",
+        "MongoDB no publica su puerto al host; la aplicación se publica solo en loopback; las credenciales se suministran externamente, no se versionan ni aparecen en logs.",
+        "La aplicación informa de forma controlada configuración inválida o MongoDB no disponible, no confirma escrituras fallidas y cierra conexiones al detenerse; se prueba consistencia ante operaciones concurrentes.",
+        "Las pruebas de integración usan una base exclusiva con protección contra limpieza de bases reales; verifican persistencia tras reconexión, comprobantes de tamaño límite y aislamiento entre ejecuciones.",
+        "La verificación completa del arnés ejecuta pruebas unitarias e integración MongoDB y build sin omitir pruebas silenciosamente; informa requisitos externos ausentes y mantiene explícita la ausencia de lint/typecheck.",
+        "README documenta prerrequisitos, variables, instalación local, arranque, pruebas, parada, conservación del volumen y procedimiento de eliminación explícita de datos de prueba; los archivos JSON existentes permanecen intactos."
+      ],
+      "archivos": [
+        "Dockerfile",
+        "compose.yaml",
+        ".dockerignore",
+        "backend/package.json",
+        "backend/package-lock.json",
+        "backend/src/server.js",
+        "backend/src/persistencia-mongodb.js",
+        "backend/test/api.test.js",
+        "backend/test/management.test.js",
+        "backend/test/persistencia-mongodb.test.js",
+        "backend/test/soporte-mongodb.js",
+        "scripts/probar-docker.mjs",
+        "scripts/verificar.mjs",
+        "package.json",
+        "README.md",
+        "AGENTS.md",
+        "progress/impl_F1.md",
+        "progress/revision_F1.md"
+      ],
+      "fuera_de_alcance": [
+        "Migración automática o modificación de backend/data/finance.json y otros datos reales; cualquier importación de datos previos se propondrá por separado.",
+        "Despliegue público, TLS, alta disponibilidad, escalado a múltiples instancias, backups automatizados y cambios visuales o funcionales de negocio.",
+        "Agregar linter, TypeScript o infraestructura de pruebas de interfaz.",
+        "Modificar secretos, instalar Docker, hacer commit o push."
+      ],
+      "plan": [
+        "Tras aprobación: verificar daemon Docker y Compose; elegir versiones compatibles y fijarlas; instalar el driver y preparar MongoDB aislado para pruebas.",
+        "Implementar persistencia MongoDB y adaptar pruebas preservando contratos y consistencia de escrituras.",
+        "Crear imagen y composición; probar salud, interfaz, API y persistencia mediante datos aislados.",
+        "Ejecutar verificación completa, documentar evidencias y entregar a revisión antes de solicitar autorización de commit."
+      ],
+      "observaciones": [
+        "Inspección realizada como Líder; no se ha implementado código ni iniciado servicios.",
+        "Docker CLI está disponible en PATH; daemon, Compose y acceso a imágenes todavía no comprobados.",
+        "La aprobación de esta feature autorizará los cambios enumerados, instalar el driver y levantar servicios locales de desarrollo y prueba; no autoriza commit ni push.",
+        "El arnés y arnes.md ya presentan cambios sin commit anteriores a esta propuesta; deben preservarse y revisarse por separado."
+      ],
+      "autorizacion_commit_push": "2026-11-01: usuario solicita push de F1 a F4; creación de commit integrado necesario autorizada por ese envío.",
+      "commit_asunto": "feat(F4): integrar Docker, MongoDB, API y usuarios de F1 a F4"
+    },
+    {
+      "id": "F2",
+      "titulo": "Definir esquemas MongoDB y completar APIs y llamados del cliente financiero",
+      "estado": "hecha",
+      "aprobacion_usuario": "2026-10-31: usuario confirma aprobar F2 y autoriza como excepción implementarla dejando F1 en_revision, sin commit ni push.",
+      "objetivo": "Formalizar los datos existentes con esquemas y validación MongoDB, completar consultas por recurso y centralizar los llamados del frontend conservando contratos y datos.",
+      "alcance": [
+        "Definir esquemas versionados de capital/estado, movimientos, suscripciones y comprobantes, reutilizando categorías, métodos e importes en centavos existentes.",
+        "Aplicar validadores MongoDB a las colecciones estado y comprobantes con el driver actual; conservar el formato persistido de F1, sin añadir Mongoose, otro framework ni nuevas dependencias.",
+        "Conservar /api/state, /api/health y los POST, PUT y DELETE existentes; añadir consultas GET de capital, lista y detalle de movimientos, lista y detalle de suscripciones, categorías y métodos.",
+        "Completar manejo de comprobantes por movimiento con GET existente y PUT/DELETE explícitos, conservando adjuntos por POST/PUT de movimientos y el límite de 5 MiB.",
+        "Crear módulo cliente con llamados nombrados para esos recursos, usarlo en los flujos actuales y mantener exportación api compatible; sin cambios visuales.",
+        "Documentar rutas, cuerpos, respuestas y errores mediante OpenAPI JSON y ejemplos sin credenciales.",
+        "Probar contratos HTTP, validadores MongoDB, cliente con fetch simulado, datos inválidos, ausentes, límites, persistencia y fallos; ejecutar el arnés completo en recursos aislados."
+      ],
+      "criterios": [
+        "Esquemas de estado, movimientos, suscripciones y comprobantes documentan campos obligatorios, tipos, límites e identificadores; una escritura directa inválida en cada colección es rechazada por MongoDB y una válida es aceptada.",
+        "GET /api/capital, /api/expenses, /api/expenses/:id, /api/subscriptions, /api/subscriptions/:id, /api/categories y /api/methods devuelven contratos documentados y prueban listas vacías, identificadores ausentes y validación aplicable.",
+        "POST/PUT/DELETE existentes mantienen contratos, códigos HTTP, IDs y cálculo en centavos; PUT/DELETE /api/receipts/:id gestionan el comprobante del movimiento y prueban 404, contenido inválido y tamaños límite.",
+        "Los llamados del cliente cubren lectura, creación, edición y eliminación de los recursos; pruebas ejecutables comprueban URL, método, cuerpo, errores HTTP/red y descarga binaria sin compilar JSX como sustituto de esas pruebas.",
+        "Los validadores y arranque son idempotentes en bases de prueba; documentos compatibles con F1 se conservan sin pérdida y datos incompatibles provocan diagnóstico controlado sin corregir ni borrar datos silenciosamente.",
+        "OpenAPI JSON y README describen exactamente endpoints, importes, comprobantes y errores; no se crean secretos ni se ejecutan migraciones sobre datos reales.",
+        "node scripts/verificar.mjs termina con código 0, sin omitir pruebas nuevas y conservando explícito lint/typecheck NO CONFIGURADO; diff limitado al alcance y cambios previos preservados."
+      ],
+      "archivos": [
+        "backend/src/esquemas-mongodb.js",
+        "backend/src/persistencia-mongodb.js",
+        "backend/src/server.js",
+        "backend/test/esquemas-mongodb.test.js",
+        "backend/test/recursos-api.test.js",
+        "backend/test/cliente-api.test.js",
+        "backend/test/persistencia-mongodb.test.js",
+        "backend/test/soporte-mongodb.js",
+        "frontend/src/api.js",
+        "frontend/src/components/Forms.jsx",
+        "frontend/src/main.jsx",
+        "docs/openapi.json",
+        "README.md",
+        "progress/impl_F2.md",
+        "progress/revision_F2.md",
+        "scripts/verificar.mjs",
+        "Dockerfile"
+      ],
+      "fuera_de_alcance": [
+        "Autenticación, usuarios, multitenencia, nuevos módulos de negocio, migración de JSON o reorganización de datos reales.",
+        "Mongoose, frameworks HTTP, dependencias de validación, cambios de infraestructura Docker, cambios visuales y herramientas de lint/typecheck.",
+        "Commit, push y eliminación física de comprobantes históricos."
+      ],
+      "dependencias": [
+        "F1 implementada y en_revision; solo una feature puede estar en_curso o en_revision según AGENTS.md."
+      ],
+      "plan": [
+        "Obtener resolución de F1 o excepción explícita para iniciar F2 conservando F1 en revisión; no inferir autorización de commit.",
+        "Alternar al rol Implementador, implementar únicamente alcance aprobado y ejecutar pruebas aisladas.",
+        "Entregar evidencia, alternar al rol Revisor y ejecutar verificación completa; declarar si la revisión no es independiente."
+      ],
+      "observaciones": [
+        "Ajustes necesarios de integración autorizada: verificador reconoce únicamente excepción F1/F2 aprobada; etapa Docker de pruebas incluye módulo cliente y OpenAPI. No cambia infraestructura de ejecución.",
+        "Cambios F2 sobre archivos compartidos invalidan la revisión previa de F1 en esos archivos; revisar conjunto antes de cualquier commit."
+      ],
+      "autorizacion_commit_push": "2026-11-01: usuario solicita push de F1 a F4; creación de commit integrado necesario autorizada por ese envío.",
+      "commit_asunto": "feat(F4): integrar Docker, MongoDB, API y usuarios de F1 a F4"
+    },
+    {
+      "id": "F3",
+      "titulo": "Separar frontend, backend y MongoDB en contenedores independientes",
+      "estado": "hecha",
+      "aprobacion_usuario": "2026-11-01: usuario confirma sí, apruebo F3, en respuesta al alcance y excepción F1/F2/F3, sin commit ni push.",
+      "objetivo": "Ejecutar tres servicios independientes conservando contratos de API, credenciales y el volumen MongoDB existente.",
+      "alcance": [
+        "Crear servicio frontend con React compilado servido por Nginx y Dockerfile propio; mantener React/Vite sin cambios visuales.",
+        "Crear servicio backend Node independiente que sirva exclusivamente la API; separar imagen y archivos de construcción por componente.",
+        "Publicar frontend en http://localhost:3002 y API backend en http://localhost:3001, ambos en loopback. Frontend redirige /api al backend mediante proxy; MongoDB sin puerto publicado.",
+        "Mantener MongoDB, credenciales actuales y volumen fjnance_datos_mongodb, sin importar ni transformar datos reales. Recuperar credenciales de la configuración Docker en memoria sin mostrarlas ni escribir archivos secretos.",
+        "Agregar comando Node de arranque que reutilice la configuración existente; si un volumen ya existe sin credenciales recuperables, detenerse sin regenerarlas. Al primer inicio sin volumen, permitir inicialización con credenciales generadas.",
+        "Adaptar pruebas Docker a tres servicios y comprobar proxy, salud, contratos, aislamiento, persistencia, errores y ausencia de frontend en backend.",
+        "Actualizar documentación y descripción del stack; ajustar verificador únicamente para la excepción autorizada F1/F2/F3. Tras pruebas aisladas, actualizar el entorno habitual y comprobarlo con consultas de solo lectura."
+      ],
+      "criterios": [
+        "Compose construye y levanta frontend, backend y mongodb independientes, saludables y con nombres identificables. Frontend responde HTML en 3002; backend responde JSON API en 3001 y no sirve React.",
+        "Todos los contratos de API y llamados del frontend siguen operativos a través de /api del frontend, incluidos adjuntos y errores HTTP; las pruebas cubren éxito, entrada inválida y rutas inexistentes.",
+        "MongoDB conserva el volumen y credenciales existentes. Datos sintéticos sobreviven a reinicios/recreación en proyecto de prueba; no se escriben pruebas en el entorno habitual.",
+        "MongoDB no publica puertos; frontend/backend solo loopback. Proxy conserva Host/origen compatibles con las protecciones existentes, y no expone secretos.",
+        "Comando de arranque probado reutiliza credenciales existentes, inicializa únicamente volumen nuevo y rechaza volumen existente sin credenciales recuperables sin eliminar datos.",
+        "Verificación completa termina con código 0, todas las pruebas aplicables y build, con lint/typecheck NO CONFIGURADO. Diff acotado, documentación de arranque y conservación actualizada."
+      ],
+      "archivos": [
+        "Dockerfile",
+        "backend/Dockerfile",
+        "frontend/Dockerfile",
+        "frontend/nginx.conf",
+        "compose.yaml",
+        ".dockerignore",
+        "backend/src/server.js",
+        "backend/test/recursos-api.test.js",
+        "backend/test/entorno.test.js",
+        "scripts/probar-docker.mjs",
+        "scripts/entorno.mjs",
+        "scripts/verificar.mjs",
+        "package.json",
+        "README.md",
+        "AGENTS.md",
+        "progress/impl_F3.md",
+        "progress/revision_F3.md"
+      ],
+      "fuera_de_alcance": [
+        "Cambios visuales, módulos de negocio, autenticación, migración de datos, secretos en archivos, borrar volúmenes, instalar servicios en Windows, commit o push."
+      ],
+      "dependencias": [
+        "F1 y F2 permanecen en_revision; la excepción previa solo cubre F1/F2. Se requiere aprobación explícita para incorporar F3 a la excepción."
+      ],
+      "plan": [
+        "Obtener aprobación de alcance y excepción F1/F2/F3, sin commit ni push.",
+        "Alternar a Implementador, separar componentes, probar con datos aislados y conservar entorno habitual hasta verificar sustitución.",
+        "Alternar a Revisor, ejecutar arnés completo, registrar evidencias y declarar limitación si no hay auditor independiente."
+      ],
+      "observaciones": [
+        "Ajuste operativo de puerto frontend a 3002: se comprobó que otro proyecto ocupa 3000; no se detiene ni modifica ese proyecto. Backend mantiene 3001."
+      ],
+      "autorizacion_commit_push": "2026-11-01: usuario solicita push de F1 a F4; creación de commit integrado necesario autorizada por ese envío.",
+      "commit_asunto": "feat(F4): integrar Docker, MongoDB, API y usuarios de F1 a F4"
+    },
+    {
+      "id": "F4",
+      "titulo": "Agregar cuentas de usuario, acceso autenticado y administración con finanzas aisladas",
+      "estado": "hecha",
+      "aprobacion_usuario": "2026-11-01: usuario aprueba todo lo mencionado, incluido alcance F4 y excepción F1/F2/F3/F4, sin commit ni push. Ampliación explícita posterior: usuario solicita seed literal con dos cuentas de prueba, contraseñas sencillas en un Markdown y ejecución directa, sin ventanas. Autoriza estas credenciales de desarrollo en texto claro; no .env ni credenciales de infraestructura.",
+      "objetivo": "Permitir registro y acceso de usuarios con datos financieros propios, y ofrecer administración de cuentas sin acceso implícito a finanzas ajenas.",
+      "alcance": [
+        "Registro con nombre, correo y contraseña; acceso, cierre de sesión, consulta de sesión/perfil y cambio de contraseña verificando la actual. Las cuentas nuevas empiezan sin datos financieros ajenos.",
+        "Roles usuario y admin verificados en backend en cada petición; el registro público solo crea usuario. Primer administrador creado mediante comando local explícito, nunca por privilegios enviados desde el navegador ni por ser el primero en registrarse.",
+        "Contraseñas con scrypt asíncrono del módulo crypto, sal aleatoria y comparación segura; sesiones opacas con token aleatorio, hash en MongoDB, expiración comprobada por servidor, rotación al acceder e invalidación al cerrar sesión/cambiar contraseña/bloquear cuenta. Cookies HttpOnly/SameSite y protección CSRF explícita en escrituras; nunca contraseñas/tokens en logs o localStorage. Cookie Secure exigida bajo HTTPS, con configuración local HTTP documentada.",
+        "Limitación de intentos de registro/acceso y mensajes de acceso genéricos; validar campos y evitar enumeración de cuentas y asignación de rol por petición.",
+        "Persistir usuarios, sesiones, datos financieros y referencias de comprobantes por propietario. El servidor obtiene propietario de la sesión, ignora/rechaza propietario enviado por cliente y protege lectura, modificación, eliminación y descarga contra acceso entre cuentas.",
+        "Conservar sin modificar el estado principal y comprobantes existentes de F1/F2 en colecciones anteriores. No asignarlos automáticamente a una cuenta nueva ni mostrarlos públicamente; cualquier transferencia de datos previos requiere una feature y aprobación separadas.",
+        "Panel de admin: listar/buscar cuentas con paginación y datos mínimos (nombre, correo, rol, estado, fecha); bloquear/reactivar usuarios ordinarios, revocar sus sesiones y consultar auditoría administrativa con actor/acción/fecha, sin contenido financiero ni secretos. No mostrar contraseñas/hashes, no permitir autobloqueo ni promoción pública de administradores.",
+        "UI de crear cuenta, acceder, salir, perfil/cambio de contraseña y administración, heredando el diseño actual; estados de carga/error/expiración y validación accesible. Usuarios autenticados gestionan sus movimientos, capital, suscripciones y comprobantes.",
+        "Documentar nuevas rutas/errores/roles en OpenAPI y README; adaptar pruebas existentes a autenticación sin añadir un interruptor que desactive la autorización.",
+        "Pruebas de dos usuarios y admin en bases aisladas, sesiones/CSRF/intentos/permisos, índices únicos/TTL y aislamiento completo; pruebas UI automatizadas usando navegador Edge/Chromium ya instalado y perfil temporal, sin instalar herramientas ni frameworks. Se aprueba como parte de F4 el script de verificación de UI necesario. Revisar capturas de escritorio/móvil en pases acotados.",
+        "Tras verificación completa y revisión, actualizar contenedores habituales con colecciones nuevas, conservando credenciales/volumen y datos previos; no crear usuarios reales ni elegir contraseña del administrador sin datos proporcionados por su titular."
+      ],
+      "criterios": [
+        "Un usuario puede registrarse, acceder, cerrar sesión, ver su perfil y cambiar contraseña; duplicados/entradas inválidas producen errores controlados y la contraseña nunca se almacena en claro ni se devuelve.",
+        "Sin sesión no se puede consultar ni modificar finanzas ni descargar comprobantes. Dos usuarios distintos no pueden ver/alterar/retirar/descargar datos del otro aunque adivinen o envíen IDs o propietario; el admin tampoco tiene acceso financiero implícito.",
+        "Sesiones expiran y se invalidan al cerrar, cambiar contraseña o bloquear cuenta; cookies y CSRF se verifican a través del proxy. Se rechazan solicitudes sin token CSRF válido y se prueba limitación de intentos.",
+        "Roles solo se asignan en servidor. Usuario común recibe 403 en rutas admin; registro no acepta escalamiento a admin. Bootstrap local explícito se prueba en base aislada y no imprime credenciales.",
+        "Panel admin permite consulta paginada, bloqueo/reactivación y revocación con auditoría; no muestra datos financieros, contraseñas/hashes/tokens ni permite autobloqueo o bloquear/promover administradores desde el flujo ordinario.",
+        "Las pruebas automatizadas de UI ejercitan registro/acceso/error/salida, operaciones financieras por cuenta y navegación/permisos de admin; comprobación de layout en escritorio y móvil. No basta compilar JSX.",
+        "Colecciones/índices/validadores nuevos son idempotentes y los registros previos de principal/comprobantes permanecen intactos y sin asociación automática. Pruebas no usan datos habituales ni se migran datos reales.",
+        "Arnés completo termina 0 con pruebas previas adaptadas y nuevas sin omisiones; documentación de esquema, rutas, bootstrap y uso local actualizada. Lint/typecheck continúan explícitos como NO CONFIGURADO si no se proponen herramientas adicionales."
+      ],
+      "archivos": [
+        "backend/src/server.js",
+        "backend/src/autenticacion.js",
+        "backend/src/usuarios.js",
+        "backend/src/esquemas-mongodb.js",
+        "backend/src/persistencia-mongodb.js",
+        "backend/test/*.test.js",
+        "backend/test/soporte-mongodb.js",
+        "frontend/src/main.jsx",
+        "frontend/src/api.js",
+        "frontend/src/styles.css",
+        "frontend/src/components/Acceso.jsx",
+        "frontend/src/components/Perfil.jsx",
+        "frontend/src/pages/Usuarios.jsx",
+        "scripts/crear-admin.mjs",
+        "scripts/probar-usuarios-ui.mjs",
+        "scripts/probar-docker.mjs",
+        "scripts/verificar.mjs",
+        "backend/Dockerfile",
+        "frontend/nginx.conf",
+        "package.json",
+        "docs/openapi.json",
+        "README.md",
+        "AGENTS.md",
+        "progress/impl_F4.md",
+        "progress/revision_F4.md",
+        "backend/scripts/seed-desarrollo.mjs",
+        "backend/test/seed-desarrollo.test.js",
+        "CUENTAS_DESARROLLO.md"
+      ],
+      "fuera_de_alcance": [
+        "Enviar correos, verificación por email, recuperar contraseña por email, OAuth, MFA, acceso público/TLS y despliegue remoto; se recomendarán aparte si se publica.",
+        "Consulta de finanzas ajenas desde admin, suplantación de usuarios, borrado permanente de cuentas/movimientos de terceros, promoción pública de roles y migración/asignación de datos anteriores.",
+        "Instalar herramientas o servicios en Windows, cambiar frameworks/stack, escribir archivos secretos, elegir credenciales reales por el usuario, commit o push."
+      ],
+      "dependencias": [
+        "F1/F2/F3 permanecen en_revision; se requiere excepción explícita F1/F2/F3/F4 o resolver revisiones anteriores.",
+        "Interfaz existente define identidad visual; no hay PRODUCT.md/DESIGN.md. La extensión conserva diseño sin crear nuevas políticas. Launcher de contexto de diseño no disponible sin instalación; se usa código existente como evidencia."
+      ],
+      "plan": [
+        "Obtener aprobación del alcance y de excepción de features; conservar datos actuales sin asignarlos.",
+        "Implementar autenticación y aislamiento con pruebas, paneles y contrato, bootstrap local y verificación UI sin descargas.",
+        "Ejecutar arnés completo y revisión técnica, declarar ausencia de auditor independiente y preparar actualización sin crear cuentas reales sin sus datos."
+      ],
+      "autorizacion_commit_push": "2026-11-01: usuario solicita push de F1 a F4; creación de commit integrado necesario autorizada por ese envío.",
+      "commit_asunto": "feat(F4): integrar Docker, MongoDB, API y usuarios de F1 a F4"
+    },
+    {
+      "id": "F5",
+      "titulo": "Gestionar cuentas bancarias, tarjetas, origen de gastos y objetivos de ahorro por usuario",
+      "estado": "pendiente",
+      "aprobacion_usuario": "Usuario: aprueba F5 y solicita push de F1 a F4 (2026-11-01). Se implementará tras cerrar los estados previos; sin autorización de commit/push de F5.",
+      "objetivo": "Relacionar cada gasto nuevo con su origen real de fondos y mostrar capital, deuda y ahorro sin duplicar dinero, con gestión individual por cuenta autenticada.",
+      "alcance": [
+        "Nuevo apartado Cuentas dentro del espacio personal: cuentas bancarias corrientes/de ahorro, efectivo y tarjetas. Registrar alias, banco, tipo y saldos en centavos; tarjetas solo con alias/tipo/banco y últimos cuatro dígitos opcionales, sin PAN completo, CVV o credenciales bancarias. Tarjetas de débito vinculadas a cuenta propia; tarjetas de crédito con deuda inicial declarada y límite opcional.",
+        "Formulario de gasto con tres medios separados: efectivo, tarjeta de débito y tarjeta de crédito. Efectivo elige caja/cuenta de efectivo; débito filtra tarjetas propias de débito y muestra la cuenta/banco de cargo; crédito filtra tarjetas propias de crédito. Selector de tarjeta solo cuando aplica y saldos visibles antes de guardar.",
+        "Efectivo/débito descuentan del origen seleccionado; crédito aumenta deuda de esa tarjeta sin descontar capital en ese momento. Editar/eliminar restaura el efecto anterior y aplica el nuevo de manera consistente y atómica por usuario. Identificadores y comprobantes se conservan.",
+        "Gestión de capital distribuido: suma saldos bancarios y efectivo, separados por banco/cuenta y tipo; 10 en un banco + 25 en otro son 35 de capital, sin sumar una tarjeta como dinero adicional. Aportes/retiros/transferencias internas explícitos con trazabilidad; transferencias y pagos de crédito no se cuentan de nuevo como gastos de consumo.",
+        "Permitir registrar pagos de deuda de una tarjeta de crédito desde una cuenta/efectivo propios, reduciendo origen y deuda sin duplicar el gasto; impedir importes inválidos o pagar deuda por encima de lo registrado.",
+        "Historial y comparativa por tarjeta con filtro de mes: total gastado y tarjeta de mayor gasto, separando consumo de pagos/transferencias. Conservar referencias históricas al archivar tarjetas/cuentas utilizadas; no borrar en cascada los gastos.",
+        "Ahorros como capital propio reservado, no un saldo adicional: mostrar capital total, reservado y disponible. Aportar/retirar reservas desde cuenta/efectivo propios, sin duplicar activos ni permitir reservar más saldo disponible. Cuenta de ahorro bancaria es una ubicación de fondos; objetivo de ahorro es una asignación de esos fondos.",
+        "Pantalla de Ahorros y subpantalla de detalle: un objetivo general configurable y múltiples metas específicas con nombre, monto objetivo, plazo en meses/fecha límite y aporte mensual planificado. El general resume todo lo ahorrado, incluyendo asignaciones específicas una sola vez. Mostrar acumulado, faltante, porcentaje, meses restantes, aporte mensual requerido y estimación con el aporte elegido, sin intereses ni promesas de rentabilidad. Cero aporte muestra sin estimación; meta cumplida muestra cumplida.",
+        "Mi perfil al pie del sidebar con avatar de iniciales y nombre real del usuario autenticado, acceso a perfil y salida; conservar seguridad/cambio de contraseña y adaptar navegación móvil sin añadir planes de pago ficticios. Mi cuenta ofrece acceso a Cuentas/tarjetas y Ahorros. Mantener identidad visual actual.",
+        "Compatibilidad: gastos anteriores Efectivo/Débito quedan sin origen específico hasta asignación explícita, nunca adivinar tarjeta/banco. Capital anterior de una cuenta de usuario aparece como saldo sin distribuir y se distingue entre repartirlo y aportar capital nuevo para evitar duplicarlo. Colecciones legadas globales siguen sin asociarse a usuarios ni alterarse.",
+        "APIs, esquemas MongoDB, cliente y OpenAPI para cuentas/tarjetas/operaciones/metas; autorización y CSRF existentes en todas las escrituras y propietario derivado de sesión, incluso en referencias cruzadas.",
+        "Pruebas de lógica contable, API/validadores, concurrencia e aislamiento de dos usuarios y navegador real para nuevos selectores/pantallas, tarjetas, distribución, metas y navegación/perfil en escritorio/móvil. Actualizar entorno habitual solo tras verificación, conservando datos e identificadores; sin añadir dinero de ejemplo a cuentas reales."
+      ],
+      "criterios": [
+        "El usuario puede crear/editar/archivar cuentas y tarjetas propias; una tarjeta de débito requiere cuenta bancaria propia y no se admiten referencias ajenas/inexistentes, tipos incorrectos ni datos sensibles de tarjeta. Elementos con historial no se borran en cascada.",
+        "Registrar/editar/eliminar un gasto exige origen válido según efectivo/débito/crédito y ajusta solo saldo o deuda correspondiente. Selector dependiente impide elegir tarjetas del tipo incorrecto y mensajes de saldo/errores son claros. Pruebas cubren reversión, cambio de origen y concurrencia sin dobles descuentos.",
+        "Suma de capital por bancos/efectivo es exacta en centavos. Distribuir saldo anterior y transferir entre cuentas no cambia el total; aportar/retirar fondos sí. Crédito no reduce capital hasta pagar deuda; el pago no incrementa gastos de consumo. Validaciones de saldo/deuda y cantidades impiden resultados inconsistentes.",
+        "La comparativa mensual identifica correctamente qué tarjeta gasta más, contempla empate/sin gastos y excluye pagos/transferencias. Archivar un origen mantiene legibles sus movimientos históricos.",
+        "Ahorro reservado no se suma dos veces al capital; reservas/retiradas y metas mantienen trazabilidad, saldo disponible y propiedad. Meta general y metas específicas no duplican aportes y rechazan asignaciones superiores al saldo disponible.",
+        "Metas muestran monto objetivo, ahorro, faltante, plazo y proyección sin intereses; casos cero aporte, meta cumplida, plazo vencido, fechas/meses inválidos y redondeo de centavos están probados. Existe un general protegido frente a borrado accidental y múltiples metas específicas editables/archivables.",
+        "Perfil se muestra al pie del sidebar con nombre de sesión y avatar, sin datos de ejemplo fijados; pantallas y formularios de cuentas/tarjetas/ahorros funcionan mediante pruebas de navegador en escritorio y móvil y mantienen acceso/salida/permisos existentes.",
+        "Datos previos conservados con saldo sin distribuir/origen no asignado explícitos, sin inventar asignaciones ni alterar colecciones globales legadas. Pruebas no usan datos reales. Nuevas rutas/validadores aíslan usuarios, requieren sesión/CSRF y conservan contratos/IDs existentes documentando extensiones.",
+        "node scripts/verificar.mjs finaliza 0 con suites previas/nuevas, UI real y build sin skips. Diff limitado, documentación y OpenAPI actualizados, lint/typecheck continúan explícitos NO CONFIGURADO."
+      ],
+      "archivos": [
+        "shared/finance.js",
+        "shared/cuentas-ahorros.js",
+        "backend/src/server.js",
+        "backend/src/cuentas-ahorros.js",
+        "backend/src/esquemas-mongodb.js",
+        "backend/src/persistencia-mongodb.js",
+        "backend/test/*.test.js",
+        "backend/test/soporte-mongodb.js",
+        "frontend/src/main.jsx",
+        "frontend/src/api.js",
+        "frontend/src/styles.css",
+        "frontend/src/components/Forms.jsx",
+        "frontend/src/components/Perfil.jsx",
+        "frontend/src/components/PerfilSidebar.jsx",
+        "frontend/src/pages/Dashboard.jsx",
+        "frontend/src/pages/Movements.jsx",
+        "frontend/src/pages/Cuentas.jsx",
+        "frontend/src/pages/Ahorros.jsx",
+        "frontend/src/pages/ObjetivoAhorro.jsx",
+        "scripts/probar-usuarios-ui.mjs",
+        "scripts/probar-docker.mjs",
+        "scripts/verificar.mjs",
+        "backend/Dockerfile",
+        "docs/openapi.json",
+        "README.md",
+        "AGENTS.md",
+        "progress/impl_F5.md",
+        "progress/revision_F5.md"
+      ],
+      "fuera_de_alcance": [
+        "Conexión/importación automática a bancos, pagos bancarios reales, PAN/CVV, intereses, rendimientos, asesoría de inversión, conciliación automática y pronósticos garantizados.",
+        "Asignar automáticamente datos financieros legados a usuarios, sembrar saldos reales/de ejemplo, borrar movimientos existentes o compartir finanzas entre usuarios/admin.",
+        "Cambiar stack, instalar herramientas nuevas, modificar contraseñas/seed/secretos, commit o push."
+      ],
+      "decisiones_propuestas": [
+        "Ahorros son reservas dentro del capital: total = fondos bancarios + efectivo, disponible = total menos reservas. Tarjetas de débito no son saldos independientes.",
+        "El objetivo general incluye reservas específicas una vez; metas específicas clasifican partes del ahorro, no crean dinero adicional. Proyecciones aritméticas usan el aporte mensual elegido, sin rentabilidad supuesta.",
+        "No se atribuyen bancos/tarjetas a movimientos antiguos; se conserva una bolsa visible de saldo sin distribuir para asignación explícita."
+      ],
+      "dependencias": [
+        "F1/F2/F3/F4 permanecen en_revision. La excepción existente no cubre F5: se requiere aprobación del alcance y ampliación expresa, sin commit ni push."
+      ],
+      "plan": [
+        "Aprobar reglas de capital/ahorro, alcance y excepción F1/F2/F3/F4/F5.",
+        "Implementar modelo/referencias/operaciones con pruebas contables y de aislamiento; después formularios/pantallas dentro de identidad actual.",
+        "Ejecutar pruebas API y navegador, verificación completa y revisión técnica; declarar ausencia de auditor independiente y actualizar entorno habitual sin datos de prueba."
+      ]
+    }
+  ],
+  "excepciones": [
+    {
+      "id": "F1-F2",
+      "features": [
+        "F1",
+        "F2"
+      ],
+      "aprobacion_usuario": "2026-10-31: usuario confirma aprobar F2 y autoriza como excepción implementarla dejando F1 en_revision, sin commit ni push."
+    },
+    {
+      "id": "F1-F2-F3",
+      "features": [
+        "F1",
+        "F2",
+        "F3"
+      ],
+      "aprobacion_usuario": "2026-11-01: usuario confirma sí, apruebo F3, en respuesta al alcance y excepción F1/F2/F3, sin commit ni push."
+    },
+    {
+      "id": "F1-F2-F3-F4",
+      "features": [
+        "F1",
+        "F2",
+        "F3",
+        "F4"
+      ],
+      "aprobacion_usuario": "2026-11-01: usuario aprueba todo lo mencionado, incluido alcance F4 y excepción F1/F2/F3/F4, sin commit ni push."
+    }
+  ],
+  "publicacion_f1_f4": {
+    "autorizacion_usuario": "2026-11-01: usuario solicita push de F1 a F4; habilita preparar y crear el commit necesario de su integración revisada y publicarlo, sujeto a barreras del arnés.",
+    "observaciones": [
+      "Las cuatro features comparten módulos modificados sucesivamente; se preparará una entrega atómica integrada con asunto feat(F4), sin inventar versiones históricas intermedias.",
+      "Se preserva arnes.md previo del usuario fuera del alcance; el registro conserva F5 como backlog aprobado, todavía sin implementación.",
+      "El modo estricto requiere excepción explícita para primer push con commits locales y cualquier suciedad ajena preservada; no se modifica el script para saltarlo."
+    ],
+    "commit_asunto": "feat(F4): integrar Docker, MongoDB, API y usuarios de F1 a F4",
+    "estado": "commit preparado; push sujeto a barrera estricta"
+  }
+}
