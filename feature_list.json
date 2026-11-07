@@ -1,6 +1,6 @@
 {
   "proyecto": "fjnance",
-  "siguiente_id": "F6",
+  "siguiente_id": "F7",
   "ids_retirados": [],
   "reglas": {
     "una_feature_activa": true,
@@ -17,6 +17,41 @@
     ]
   },
   "features": [
+    {
+      "id": "F6",
+      "titulo": "Preparar integración con WhatsApp Cloud API oficial de Meta",
+      "estado": "pendiente",
+      "aprobacion_usuario": "2026-11-07: usuario ordena terminar revisión F5 y push, crear rama whatsapp y realizar F6 y su push; autoriza alcance propuesto, commits necesarios y rama. Excepción de primer push pendiente de confirmación separada.",
+      "criterios": [
+        "Integración opcional, desactivada sin configuración y sin dependencias nuevas; secretos suministrados externamente sin modificar archivos .env ni variantes.",
+        "Webhook GET verifica token y devuelve challenge; POST verifica HMAC SHA-256 sobre cuerpo original, limita tamaño, valida estructura y rechaza firmas inválidas antes de procesar eventos.",
+        "Eventos se filtran por número configurado, se reciben con deduplicación persistente y sin registrar contenido privado; esta preparación no crea movimientos financieros ni vincula teléfonos a usuarios automáticamente.",
+        "Cliente Graph API permite texto y plantillas, con versión configurable, validación, timeout y errores sin credenciales; pruebas simulan Meta sin enviar mensajes reales.",
+        "Guía y OpenAPI documentan configuración, permisos, alta del número, HTTPS público y prueba con Meta; se preservan autenticación y protección de rutas existentes y se documenta el ajuste mínimo del proxy necesario para el webhook.",
+        "Pruebas nuevas cubren éxitos, entradas inválidas, configuración ausente, firma, duplicados y errores remotos; init completo debe terminar 0, registrando lint/typecheck NO CONFIGURADO y limitaciones de verificación real sin cuenta Meta."
+      ],
+      "archivos": [
+        "backend/src/whatsapp.js",
+        "backend/src/server.js",
+        "backend/test/whatsapp.test.js",
+        "backend/test/whatsapp-api.test.js",
+        "backend/Dockerfile",
+        "compose.yaml",
+        "frontend/nginx.conf",
+        "docs/whatsapp.md",
+        "docs/openapi.json",
+        "README.md",
+        "progress/impl_F6.md",
+        "progress/revision_F6.md"
+      ],
+      "fuera_de_alcance": [
+        "Agente IA, registro de gastos por chat, consulta de saldos, vinculación de cuentas, campañas y envíos reales.",
+        "Instalar herramientas, contratar proveedores, publicar servicios, modificar secretos, commit o push."
+      ],
+      "dependencias": [
+        "Iniciar en rama whatsapp después de cerrar y publicar F5."
+      ]
+    },
     {
       "id": "F1",
       "titulo": "Ejecutar fjnance con Docker Compose y persistencia en MongoDB",
@@ -284,7 +319,7 @@
     {
       "id": "F5",
       "titulo": "Gestionar cuentas bancarias, tarjetas, origen de gastos y objetivos de ahorro por usuario",
-      "estado": "en_revision",
+      "estado": "hecha",
       "aprobacion_usuario": "Usuario: aprueba F5 y solicita push de F1 a F4 (2026-11-01). Se implementará tras cerrar los estados previos; sin autorización de commit/push de F5. Ampliación expresa 2026-11-02: quitar últimos cuatro dígitos de interfaz, categorías en perfil, cálculo bidireccional de ahorro por meses/semanas y tarjeta en suscripciones.",
       "objetivo": "Relacionar cada gasto nuevo con su origen real de fondos y mostrar capital, deuda y ahorro sin duplicar dinero, con gestión individual por cuenta autenticada.",
       "alcance": [
@@ -361,8 +396,8 @@
         "F1–F4 terminadas y publicadas en cc27135; F5 es la única feature en revisión."
       ],
       "plan": [
-        "Ampliación revisada con init completo 0: 30/30, UI real y build; entorno actualizado y datos conservados.",
-        "Pendiente revisión del usuario; F5 en_revision, sin commit/push."
+        "Revisión técnica de cierre 2026-11-07: init completo 0, 30/30, navegador y build; implementación ya publicada en c609c4f.",
+        "Usuario autoriza cierre, commit y push; sin reescritura de historia."
       ]
     }
   ],
