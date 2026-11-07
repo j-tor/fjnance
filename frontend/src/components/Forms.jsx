@@ -1,6 +1,7 @@
 ﻿import React, {useEffect, useRef, useState} from 'react';
 
-import {localDate, parseAmount, validateExpense} from '../../../shared/finance.js';
+import {localDate, parseAmount, validateExpense, money, METHODS} from '../../../shared/finance.js';
+import {NOMBRES_MEDIOS} from '../../../shared/cuentas-ahorros.js';
 
 
 export {api} from '../api.js';
@@ -17,6 +18,14 @@ export function ExpenseForm({data, save, close, expense}) {
   const [form, setForm] = useState(expense ? {...expense, amount: (expense.amount / 100).toFixed(2)} : {amount:'', description:'', date:localDate(), method:data.methods[0], category:''});
   const [receipt, setReceipt] = useState(undefined); const [busy,setBusy] = useState(false); const [reading,setReading] = useState(false); const [error,setError] = useState('');
   const lock = useRef(false);
+  const [conservarAnterior,setConservarAnterior]=useState(!!expense && !expense.medio);
+  const [medio,setMedio]=useState(expense?.medio || (expense?.method===METHODS[1]?'credito':'efectivo'));
+  const [origen,setOrigen]=useState(expense?.tarjetaId || expense?.cuentaId || '');
+  const r=data.resumenCuentas;
+  const opciones=medio==='efectivo'?r.cuentas.filter(c=>c.tipo==='efectivo'&&(c.activo||c.id===expense?.cuentaId)):r.tarjetas.filter(t=>t.tipo===medio&&(t.activo||t.id===expense?.tarjetaId));
+  const tarjetaElegida=r.tarjetas.find(t=>t.id===origen);
+  const cuentaCargo=medio==='debito'&&expense?.tarjetaId===origen?expense.cuentaId:tarjetaElegida?.cuentaId;
+  const cuentaElegida=r.cuentas.find(c=>c.id===(medio==='efectivo'?origen:cuentaCargo));
   function change(event) {setForm({...form,[event.target.name]:event.target.value});}
   async function attach(event) {
     const file = event.target.files[0]; setError(''); if(!file) return;
@@ -26,17 +35,23 @@ export function ExpenseForm({data, save, close, expense}) {
   }
   async function submit(event) {
     event.preventDefault();if(lock.current || reading) return;
-    const message = validateExpense({...form,amount:parseAmount(form.amount)});if(message) return setError(message);
+    if(!conservarAnterior&&!origen)return setError('Selecciona una cuenta de efectivo o una tarjeta. Puedes agregarlas en Cuentas y tarjetas.');
+    const campos={...form,method:conservarAnterior?form.method:medio==='credito'?METHODS[1]:METHODS[0]};
+    const message = validateExpense({...campos,amount:parseAmount(form.amount)},[...data.categories,...(expense?[expense.category]:[])]);if(message) return setError(message);
     lock.current=true;setBusy(true);setError('');
-    try {const {receipt: ignoredReceipt, ...fields} = form; await save({...fields, ...(receipt !== undefined ? {receipt} : {})});} catch(err) {setError(err.message);} finally {lock.current=false;setBusy(false);}
+    try {const {receipt: ignoredReceipt, ...fields} = campos; await save({...fields, ...(!conservarAnterior?{medio, ...(medio==='efectivo'?{cuentaId:origen}:{tarjetaId:origen})}:{}), ...(receipt !== undefined ? {receipt} : {})});} catch(err) {setError(err.message);} finally {lock.current=false;setBusy(false);}
   }
   return <Modal title={expense ? "Editar movimiento" : "Registrar gasto"} close={() => !busy && close()}><form onSubmit={submit}>
     <p className="muted">Un registro claro, un saldo al día.</p><fieldset disabled={busy}>
     <div className="form-grid"><label>Monto (L)<input autoFocus name="amount" inputMode="decimal" placeholder="0.00" required value={form.amount} onChange={change}/></label><label>Fecha<input name="date" type="date" required max={localDate()} value={form.date} onChange={change}/></label></div>
     <label>Descripción<input name="description" maxLength="160" placeholder="¿En qué gastaste?" required value={form.description} onChange={change}/></label>
-    <label>Método de pago<select name="method" value={form.method} onChange={change}>{data.methods.map(method => <option key={method}>{method}</option>)}</select></label>
-    <p className="method-note">{form.method === data.methods[0] ? 'Este gasto se descontará del capital disponible.' : 'Este gasto se sumará al crédito del mes, sin tocar tu capital.'}</p>
-    <label>Categoría<select name="category" value={form.category} required onChange={change}><option value="" disabled>Seleccionar categoría</option>{data.categories.map(category => <option key={category}>{category}</option>)}</select></label>
+    {expense&&!expense.medio&&<label className="checkbox-label"><input type="checkbox" checked={conservarAnterior} onChange={e=>setConservarAnterior(e.target.checked)}/>Conservar origen anterior sin asignar</label>}
+    {!conservarAnterior&&<><label>Método de pago<select name="medio" value={medio} onChange={e=>{setMedio(e.target.value);setOrigen('');}}>{Object.entries(NOMBRES_MEDIOS).map(([v,n])=><option key={v} value={v}>{n}</option>)}</select></label>
+    <label>{medio==='efectivo'?'Cuenta de efectivo':medio==='debito'?'Tarjeta de débito':'Tarjeta de crédito'}<select name={medio==='efectivo'?'cuentaId':'tarjetaId'} value={origen} onChange={e=>setOrigen(e.target.value)} required><option value="" disabled>Selecciona el origen del pago</option>{opciones.map(o=><option value={o.id} key={o.id}>{o.alias}{o.banco?` · ${o.banco}`:''}{!o.activo?' (archivada)':''}</option>)}</select></label>
+    {!opciones.length&&<p className="method-note">Primero agrega {medio==='efectivo'?'una cuenta de efectivo':'una tarjeta de este tipo'} en <a href="#/cuentas" onClick={close}>Cuentas y tarjetas</a>.</p>}
+    <p className="method-note">{medio==='credito'?`Se sumará a la deuda de ${tarjetaElegida?.alias || 'la tarjeta seleccionada'}, sin descontar capital hasta pagarla.`:cuentaElegida?`Se descontará de ${cuentaElegida.alias}. Disponible: ${money(cuentaElegida.disponible)}.`:'Selecciona de dónde sale el dinero.'}</p></>}
+    {conservarAnterior&&<p className="method-note">{form.method}. No se inventará una cuenta o tarjeta para este registro anterior.</p>}
+    <label>Categoría<select name="category" value={form.category} required onChange={change}><option value="" disabled>Seleccionar categoría</option>{[...new Set([...data.categories,...(expense?[expense.category]:[])])].map(category => <option key={category}>{category}</option>)}</select></label>
     <label className="file-input"><Icon name="receipt"/>Adjuntar factura / comprobante<input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" onChange={attach} disabled={reading}/></label><small>{reading ? 'Leyendo archivo…' : receipt ? receipt.name : receipt === undefined && expense?.receipt ? expense.receipt.name : 'Opcional · PDF o imagen · hasta 5 MB'}</small>
     {(receipt || (receipt === undefined && expense?.receipt)) && <button type="button" className="text-button" disabled={reading} onClick={() => setReceipt(null)}>Quitar comprobante</button>}
     </fieldset>{error && <p className="error" role="alert">{error}</p>}

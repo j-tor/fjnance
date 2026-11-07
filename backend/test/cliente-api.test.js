@@ -13,6 +13,12 @@ test('cliente: todos los llamados, cuerpos y descarga binaria', async t => {
     ['crearMovimiento', [valor], 'expenses', 'POST', valor], ['actualizarMovimiento', ['id', valor], 'expenses/id', 'PUT', valor], ['eliminarMovimiento', ['id'], 'expenses/id', 'DELETE', {}],
     ['obtenerSuscripciones', [], 'subscriptions'], ['obtenerSuscripcion', ['id'], 'subscriptions/id'],
     ['crearSuscripcion', [valor], 'subscriptions', 'POST', valor], ['actualizarSuscripcion', ['id', valor], 'subscriptions/id', 'PUT', valor], ['eliminarSuscripcion', ['id'], 'subscriptions/id', 'DELETE', {}],
+    ['guardarCategoria', [valor], 'categorias', 'POST', valor], ['guardarCategoria', [valor,'id'], 'categorias/id', 'PUT', valor],
+    ['guardarCuenta', [valor], 'cuentas', 'POST', valor], ['guardarCuenta', [valor,'id'], 'cuentas/id', 'PUT', valor],
+    ['guardarTarjeta', [valor], 'tarjetas', 'POST', valor], ['guardarTarjeta', [valor,'id'], 'tarjetas/id', 'PUT', valor],
+    ['guardarObjetivo', [valor], 'objetivos', 'POST', valor], ['guardarObjetivo', [valor,'general'], 'objetivos/general', 'PUT', valor],
+    ['estadoCuenta', ['id',false], 'cuentas/id', 'PUT', {activo:false}], ['estadoTarjeta', ['id',true], 'tarjetas/id', 'PUT', {activo:true}], ['estadoObjetivo', ['id',true], 'objetivos/id', 'PUT', {activo:true}],
+    ['registrarOperacion', [valor], 'operaciones', 'POST', valor], ['registrarAhorro', [valor], 'ahorros', 'POST', valor], ['anularOperacion', ['id'], 'operaciones/id/anular', 'POST', {}],
     ['obtenerCategorias', [], 'categories'], ['obtenerMetodos', [], 'methods'],
     ['guardarComprobante', ['id', valor], 'receipts/id', 'PUT', valor], ['eliminarComprobante', ['id'], 'receipts/id', 'DELETE', {}],
   ];

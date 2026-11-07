@@ -73,6 +73,7 @@ test('recursos API: consultas, CRUD, comprobantes, límites y catálogo OpenAPI'
     assert.equal(documento.openapi, '3.0.3');
     for (const [ruta, metodos] of Object.entries(documento.paths)) for (const metodo of Object.keys(metodos)) {
       if (ruta.startsWith('/api/auth/') || ruta.startsWith('/api/admin/')) continue;
+      if (/^\/api\/(categorias|cuentas|tarjetas|objetivos|operaciones|ahorros)(\/|$)/.test(ruta)) continue; // Cubiertos en cuentas-api.test.js.
       assert.ok(cobertura.has(metodo + ' ' + ruta), 'Endpoint documentado probado: ' + metodo + ' ' + ruta);
     }
     function referencias(valor) {

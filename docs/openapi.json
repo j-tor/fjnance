@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "API de fjnance",
-    "version": "2.0.0",
-    "description": "API local autenticada de fjnance. Datos financieros aislados por la sesión; los IDs del cliente no asignan propietario. Datos anteriores sin migración automática."
+    "version": "3.0.0",
+    "description": "API local autenticada de fjnance. Datos financieros aislados por la sesión; los IDs del cliente no asignan propietario. Datos anteriores sin migración automática. Cuentas, tarjetas y reservas dentro del capital. Gastos nuevos con cartera configurada requieren medio y origen; los anteriores quedan sin asignar. General incluye cada reserva una vez. Metas son proyecciones aritméticas sin intereses. Categorías gestionadas en perfil; planes bidireccionales por meses/semanas. Sin captura de últimos cuatro dígitos en interfaz; valores previos conservados por compatibilidad."
   },
   "servers": [
     {
@@ -3383,6 +3383,1783 @@
           }
         }
       }
+    },
+    "/api/cuentas": {
+      "get": {
+        "summary": "Listar cuentas propias con saldos/proyecciones",
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "mes",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Crear cuenta",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaCuenta"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cuentas/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Consultar cuenta propia",
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Editar o reactivar/archivar cuenta",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/EntradaCuenta"
+                  },
+                  {
+                    "$ref": "#/components/schemas/EstadoActivo"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Archivar sin borrar historial cuenta",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tarjetas": {
+      "get": {
+        "summary": "Listar tarjetas propias con saldos/proyecciones",
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "mes",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Crear tarjeta",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaTarjeta"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tarjetas/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Consultar tarjeta propia",
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Editar o reactivar/archivar tarjeta",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/EntradaTarjeta"
+                  },
+                  {
+                    "$ref": "#/components/schemas/EstadoActivo"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Archivar sin borrar historial tarjeta",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/objetivos": {
+      "get": {
+        "summary": "Listar objetivos propias con saldos/proyecciones",
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "mes",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Crear objetivo",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaObjetivo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/objetivos/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Consultar objetivo propia",
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Editar o reactivar/archivar objetivo",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/EntradaObjetivo"
+                  },
+                  {
+                    "$ref": "#/components/schemas/EstadoActivo"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Archivar sin borrar historial objetivo",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/operaciones": {
+      "get": {
+        "summary": "Historial de fondos propio",
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Aportar/retirar capital, transferir o pagar crédito sin duplicar consumo",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaOperacion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/operaciones/{id}/anular": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Anular operación conservando historial; rechaza saldos/deuda inconsistentes",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ahorros": {
+      "get": {
+        "summary": "Consultar reservas y objetivos propios",
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Reservar o liberar ahorro dentro del capital",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntradaAhorro"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/categorias": {
+      "get": {
+        "summary": "Listar categorías propias, incluidas archivadas",
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear categoría propia sin duplicados",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nombre"
+                ],
+                "properties": {
+                  "nombre": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/categorias/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "summary": "Renombrar categoría en historial o archivar/reactivar sin borrar gastos",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nombre": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "activo": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Archivar categoría conservando movimientos",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado propio; escrituras devuelven snapshot completo con resumenCuentas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos, saldo, deuda o referencias incompatibles.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesión ausente o expirada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Identificador inexistente o de otro propietario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3511,7 +5288,7 @@
           },
           "category": {
             "type": "string",
-            "description": "Valor de GET /api/categories."
+            "description": "Nombre del catálogo propio activo; edición admite conservar categoría histórica."
           },
           "receipt": {
             "type": "object",
@@ -3542,6 +5319,21 @@
             },
             "nullable": true,
             "description": "Opcional: en PUT se conserva si se omite; null elimina el adjunto."
+          },
+          "medio": {
+            "enum": [
+              "efectivo",
+              "debito",
+              "credito"
+            ]
+          },
+          "cuentaId": {
+            "type": "string",
+            "nullable": true
+          },
+          "tarjetaId": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -3578,10 +5370,26 @@
             "type": "string"
           },
           "category": {
-            "type": "string"
+            "type": "string",
+            "description": "Nombre del catálogo propio activo; edición admite conservar categoría histórica."
           },
           "receipt": {
             "$ref": "#/components/schemas/Comprobante"
+          },
+          "medio": {
+            "enum": [
+              "efectivo",
+              "debito",
+              "credito"
+            ]
+          },
+          "cuentaId": {
+            "type": "string",
+            "nullable": true
+          },
+          "tarjetaId": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -3608,6 +5416,11 @@
           },
           "active": {
             "type": "boolean"
+          },
+          "tarjetaId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tarjeta propia de débito/crédito; referencia de recordatorio, no genera cargos."
           }
         }
       },
@@ -3648,6 +5461,11 @@
             "format": "date",
             "nullable": true,
             "description": "Próximo corte; null si está pausada."
+          },
+          "tarjetaId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tarjeta propia de débito/crédito; referencia de recordatorio, no genera cargos."
           }
         }
       },
@@ -3693,6 +5511,48 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          },
+          "resumenCuentas": {
+            "type": "object",
+            "description": "Saldos en centavos, reservas incluidas una vez, cuentas/tarjetas/metas e historial.",
+            "properties": {
+              "capital": {
+                "type": "integer"
+              },
+              "reservado": {
+                "type": "integer"
+              },
+              "disponible": {
+                "type": "integer"
+              },
+              "bancos": {
+                "type": "integer"
+              },
+              "efectivo": {
+                "type": "integer"
+              },
+              "sinDistribuir": {
+                "type": "integer"
+              },
+              "cuentas": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "tarjetas": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "metas": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
             }
           }
         }
@@ -3748,6 +5608,203 @@
           "csrf": {
             "type": "string",
             "description": "Token CSRF, mantener únicamente en memoria."
+          }
+        }
+      },
+      "EntradaCuenta": {
+        "type": "object",
+        "required": [
+          "alias",
+          "tipo"
+        ],
+        "properties": {
+          "alias": {
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "efectivo",
+              "corriente",
+              "ahorro"
+            ]
+          },
+          "banco": {
+            "type": "string"
+          },
+          "saldo": {
+            "type": "string",
+            "description": "Lempiras con hasta dos decimales; respuestas en centavos enteros."
+          },
+          "origen": {
+            "enum": [
+              "nuevo",
+              "sin-distribuir"
+            ]
+          }
+        }
+      },
+      "EntradaTarjeta": {
+        "type": "object",
+        "required": [
+          "alias",
+          "tipo"
+        ],
+        "description": "Solo alias y últimos cuatro dígitos. No PAN/CVV/PIN. Débito requiere cuenta propia; crédito requiere banco.",
+        "properties": {
+          "alias": {
+            "type": "string"
+          },
+          "tipo": {
+            "enum": [
+              "debito",
+              "credito"
+            ]
+          },
+          "banco": {
+            "type": "string"
+          },
+          "cuentaId": {
+            "type": "string"
+          },
+          "ultimos4": {
+            "type": "string",
+            "pattern": "^(|[0-9]{4})$"
+          },
+          "limite": {
+            "type": "string",
+            "description": "Lempiras con hasta dos decimales; respuestas en centavos enteros."
+          },
+          "deudaInicial": {
+            "type": "string",
+            "description": "Lempiras con hasta dos decimales; respuestas en centavos enteros."
+          }
+        }
+      },
+      "EntradaObjetivo": {
+        "type": "object",
+        "required": [
+          "nombre",
+          "objetivo",
+          "meses",
+          "inicio"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "objetivo": {
+            "type": "string",
+            "description": "Lempiras con hasta dos decimales; respuestas en centavos enteros."
+          },
+          "meses": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2600,
+            "description": "Cantidad de períodos de la unidad seleccionada (campo histórico meses); máximo 600 meses o 2600 semanas."
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date"
+          },
+          "mensual": {
+            "type": "string",
+            "description": "Aporte por período: mensual o semanal según unidad. El servidor calcula el importe en modo plazo."
+          },
+          "unidad": {
+            "enum": [
+              "meses",
+              "semanas"
+            ],
+            "default": "meses"
+          },
+          "modo": {
+            "enum": [
+              "plazo",
+              "aporte",
+              "manual"
+            ],
+            "description": "plazo calcula aporte; aporte calcula duración; manual conserva contrato previo."
+          }
+        }
+      },
+      "EntradaOperacion": {
+        "type": "object",
+        "required": [
+          "tipo",
+          "monto",
+          "fecha"
+        ],
+        "properties": {
+          "tipo": {
+            "enum": [
+              "aporte",
+              "retiro",
+              "transferencia",
+              "pago_credito"
+            ]
+          },
+          "monto": {
+            "type": "string",
+            "description": "Lempiras con hasta dos decimales; respuestas en centavos enteros."
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "origenId": {
+            "type": "string"
+          },
+          "destinoId": {
+            "type": "string"
+          },
+          "tarjetaId": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          }
+        }
+      },
+      "EntradaAhorro": {
+        "type": "object",
+        "required": [
+          "tipo",
+          "metaId",
+          "cuentaId",
+          "monto",
+          "fecha"
+        ],
+        "properties": {
+          "tipo": {
+            "enum": [
+              "aporte",
+              "retiro"
+            ]
+          },
+          "metaId": {
+            "type": "string"
+          },
+          "cuentaId": {
+            "type": "string"
+          },
+          "monto": {
+            "type": "string",
+            "description": "Lempiras con hasta dos decimales; respuestas en centavos enteros."
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "EstadoActivo": {
+        "type": "object",
+        "required": [
+          "activo"
+        ],
+        "properties": {
+          "activo": {
+            "type": "boolean"
           }
         }
       }

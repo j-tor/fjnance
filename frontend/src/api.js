@@ -51,3 +51,15 @@ export const cambiarClave = valor => api('auth/clave', {method: 'PUT', body: val
 export const listarUsuarios = (buscar = '', pagina = 1) => api(`admin/usuarios?buscar=${encodeURIComponent(buscar)}&pagina=${pagina}`);
 export const gestionarUsuario = (id, accion) => api(`admin/usuarios/${segmento(id)}`, {method: 'PUT', body: {accion}});
 export const obtenerAuditoria = () => api('admin/auditoria');
+const guardarRecurso = (recurso, valor, id) => api(id ? `${recurso}/${segmento(id)}` : recurso, {method: id ? 'PUT' : 'POST', body: valor});
+export const guardarCuenta = (valor, id) => guardarRecurso('cuentas', valor, id);
+export const guardarTarjeta = (valor, id) => guardarRecurso('tarjetas', valor, id);
+export const guardarObjetivo = (valor, id) => guardarRecurso('objetivos', valor, id);
+export const estadoCuenta = (id, activo) => guardarCuenta({activo}, id);
+export const estadoTarjeta = (id, activo) => guardarTarjeta({activo}, id);
+export const estadoObjetivo = (id, activo) => guardarObjetivo({activo}, id);
+export const registrarOperacion = valor => api('operaciones', {method: 'POST', body: valor});
+export const registrarAhorro = valor => api('ahorros', {method: 'POST', body: valor});
+export const anularOperacion = id => api(`operaciones/${segmento(id)}/anular`, {method: 'POST', body: {}});
+
+export const guardarCategoria=(valor,id)=>guardarRecurso('categorias',valor,id);

@@ -284,8 +284,8 @@
     {
       "id": "F5",
       "titulo": "Gestionar cuentas bancarias, tarjetas, origen de gastos y objetivos de ahorro por usuario",
-      "estado": "pendiente",
-      "aprobacion_usuario": "Usuario: aprueba F5 y solicita push de F1 a F4 (2026-11-01). Se implementará tras cerrar los estados previos; sin autorización de commit/push de F5.",
+      "estado": "en_revision",
+      "aprobacion_usuario": "Usuario: aprueba F5 y solicita push de F1 a F4 (2026-11-01). Se implementará tras cerrar los estados previos; sin autorización de commit/push de F5. Ampliación expresa 2026-11-02: quitar últimos cuatro dígitos de interfaz, categorías en perfil, cálculo bidireccional de ahorro por meses/semanas y tarjeta en suscripciones.",
       "objetivo": "Relacionar cada gasto nuevo con su origen real de fondos y mostrar capital, deuda y ahorro sin duplicar dinero, con gestión individual por cuenta autenticada.",
       "alcance": [
         "Nuevo apartado Cuentas dentro del espacio personal: cuentas bancarias corrientes/de ahorro, efectivo y tarjetas. Registrar alias, banco, tipo y saldos en centavos; tarjetas solo con alias/tipo/banco y últimos cuatro dígitos opcionales, sin PAN completo, CVV o credenciales bancarias. Tarjetas de débito vinculadas a cuenta propia; tarjetas de crédito con deuda inicial declarada y límite opcional.",
@@ -299,7 +299,8 @@
         "Mi perfil al pie del sidebar con avatar de iniciales y nombre real del usuario autenticado, acceso a perfil y salida; conservar seguridad/cambio de contraseña y adaptar navegación móvil sin añadir planes de pago ficticios. Mi cuenta ofrece acceso a Cuentas/tarjetas y Ahorros. Mantener identidad visual actual.",
         "Compatibilidad: gastos anteriores Efectivo/Débito quedan sin origen específico hasta asignación explícita, nunca adivinar tarjeta/banco. Capital anterior de una cuenta de usuario aparece como saldo sin distribuir y se distingue entre repartirlo y aportar capital nuevo para evitar duplicarlo. Colecciones legadas globales siguen sin asociarse a usuarios ni alterarse.",
         "APIs, esquemas MongoDB, cliente y OpenAPI para cuentas/tarjetas/operaciones/metas; autorización y CSRF existentes en todas las escrituras y propietario derivado de sesión, incluso en referencias cruzadas.",
-        "Pruebas de lógica contable, API/validadores, concurrencia e aislamiento de dos usuarios y navegador real para nuevos selectores/pantallas, tarjetas, distribución, metas y navegación/perfil en escritorio/móvil. Actualizar entorno habitual solo tras verificación, conservando datos e identificadores; sin añadir dinero de ejemplo a cuentas reales."
+        "Pruebas de lógica contable, API/validadores, concurrencia e aislamiento de dos usuarios y navegador real para nuevos selectores/pantallas, tarjetas, distribución, metas y navegación/perfil en escritorio/móvil. Actualizar entorno habitual solo tras verificación, conservando datos e identificadores; sin añadir dinero de ejemplo a cuentas reales.",
+        "Ampliación solicitada: ocultar captura/visualización de últimos cuatro dígitos sin borrar datos existentes; categorías por usuario desde perfil (crear/renombrar/archivar/reactivar), con historial conservado; ahorro calcula aporte desde plazo o plazo desde aporte, por meses/semanas; suscripciones seleccionan tarjeta propia sin cargos automáticos."
       ],
       "criterios": [
         "El usuario puede crear/editar/archivar cuentas y tarjetas propias; una tarjeta de débito requiere cuenta bancaria propia y no se admiten referencias ajenas/inexistentes, tipos incorrectos ni datos sensibles de tarjeta. Elementos con historial no se borran en cascada.",
@@ -310,7 +311,9 @@
         "Metas muestran monto objetivo, ahorro, faltante, plazo y proyección sin intereses; casos cero aporte, meta cumplida, plazo vencido, fechas/meses inválidos y redondeo de centavos están probados. Existe un general protegido frente a borrado accidental y múltiples metas específicas editables/archivables.",
         "Perfil se muestra al pie del sidebar con nombre de sesión y avatar, sin datos de ejemplo fijados; pantallas y formularios de cuentas/tarjetas/ahorros funcionan mediante pruebas de navegador en escritorio y móvil y mantienen acceso/salida/permisos existentes.",
         "Datos previos conservados con saldo sin distribuir/origen no asignado explícitos, sin inventar asignaciones ni alterar colecciones globales legadas. Pruebas no usan datos reales. Nuevas rutas/validadores aíslan usuarios, requieren sesión/CSRF y conservan contratos/IDs existentes documentando extensiones.",
-        "node scripts/verificar.mjs finaliza 0 con suites previas/nuevas, UI real y build sin skips. Diff limitado, documentación y OpenAPI actualizados, lint/typecheck continúan explícitos NO CONFIGURADO."
+        "node scripts/verificar.mjs finaliza 0 con suites previas/nuevas, UI real y build sin skips. Diff limitado, documentación y OpenAPI actualizados, lint/typecheck continúan explícitos NO CONFIGURADO.",
+        "Categorías aisladas por usuario, sin duplicados/vacíos, nombres históricos conservados al archivar y renombrados atómicamente; UI de perfil y gastos usan catálogo propio.",
+        "Ahorros muestran cálculo inmediato bidireccional por meses o semanas, con redondeo, cero, objetivo cumplido y fechas válidas; tarjetas sin campo/visualización de últimos cuatro dígitos y suscripciones con tarjeta propia/archivada histórica y rechazo de referencia ajena."
       ],
       "archivos": [
         "shared/finance.js",
@@ -340,7 +343,9 @@
         "README.md",
         "AGENTS.md",
         "progress/impl_F5.md",
-        "progress/revision_F5.md"
+        "progress/revision_F5.md",
+        "frontend/src/components/SubscriptionForm.jsx",
+        "frontend/src/pages/Subscriptions.jsx"
       ],
       "fuera_de_alcance": [
         "Conexión/importación automática a bancos, pagos bancarios reales, PAN/CVV, intereses, rendimientos, asesoría de inversión, conciliación automática y pronósticos garantizados.",
@@ -353,12 +358,11 @@
         "No se atribuyen bancos/tarjetas a movimientos antiguos; se conserva una bolsa visible de saldo sin distribuir para asignación explícita."
       ],
       "dependencias": [
-        "F1/F2/F3/F4 permanecen en_revision. La excepción existente no cubre F5: se requiere aprobación del alcance y ampliación expresa, sin commit ni push."
+        "F1–F4 terminadas y publicadas en cc27135; F5 es la única feature en revisión."
       ],
       "plan": [
-        "Aprobar reglas de capital/ahorro, alcance y excepción F1/F2/F3/F4/F5.",
-        "Implementar modelo/referencias/operaciones con pruebas contables y de aislamiento; después formularios/pantallas dentro de identidad actual.",
-        "Ejecutar pruebas API y navegador, verificación completa y revisión técnica; declarar ausencia de auditor independiente y actualizar entorno habitual sin datos de prueba."
+        "Ampliación revisada con init completo 0: 30/30, UI real y build; entorno actualizado y datos conservados.",
+        "Pendiente revisión del usuario; F5 en_revision, sin commit/push."
       ]
     }
   ],
@@ -399,6 +403,9 @@
       "El modo estricto requiere excepción explícita para primer push con commits locales y cualquier suciedad ajena preservada; no se modifica el script para saltarlo."
     ],
     "commit_asunto": "feat(F4): integrar Docker, MongoDB, API y usuarios de F1 a F4",
-    "estado": "commit preparado; push sujeto a barrera estricta"
+    "estado": "publicado",
+    "commit": "cc27135",
+    "excepcion_usuario": "2026-11-02: Sí, publicar cc27135 con esa excepción; incluye el archivo ajeno arnes.md preservado y adelanto local.",
+    "remoto": "origin/main"
   }
 }

@@ -1,11 +1,13 @@
 ﻿import http from 'node:http';
 import {abrirMongo} from './persistencia-mongodb.js';
+import {resumirCartera} from '../../shared/cuentas-ahorros.js';
+import {categoriasUsuario, guardarCategoria, vincularSuscripcion, guardarCuenta, archivarCuenta, guardarTarjeta, archivarTarjeta, asignarOrigen, registrarOperacion, anularOperacion, guardarMeta, archivarMeta, registrarAhorro, validarSaldos} from './cuentas-ahorros.js';
 import {crearUsuarios, publico} from './usuarios.js';
 import {cookieSesion, tokenPeticion} from './autenticacion.js';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomUUID, randomBytes} from 'node:crypto';
-import {CATEGORIES, METHODS, parseAmount, validateExpense, nextSubscriptionDate} from '../../shared/finance.js';
+import {CATEGORIES, METHODS, parseAmount, validateExpense, nextSubscriptionDate, localDate} from '../../shared/finance.js';
 
 const MAX_FILE = 5 * 1024 * 1024;
 const types = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
@@ -28,11 +30,11 @@ async function body(req, limite = 7 * 1024 * 1024) {
     return value;
   } catch {throw fail('JSON inválido.');}
 }
-function expenseFrom(input, previous) {
+function expenseFrom(input, previous, categorias = CATEGORIES) {
   if (typeof input.description !== 'string' || input.description.length > 160 || typeof input.date !== 'string') throw fail('Descripción o fecha inválida.');
   const receipt = Object.hasOwn(input, 'receipt') ? input.receipt : previous?.receipt || null;
-  const expense = {id: previous?.id || randomUUID(), description: input.description.trim(), amount: typeof input.amount === 'string' ? parseAmount(input.amount) : null, date: input.date, method: input.method, category: input.category, receipt};
-  const error = validateExpense(expense); if (error) throw fail(error);
+  const expense = {id: previous?.id || randomUUID(), description: input.description.trim(), amount: typeof input.amount === 'string' ? parseAmount(input.amount) : null, date: input.date, method: input.medio ? (input.medio === 'credito' ? METHODS[1] : METHODS[0]) : input.method, category: input.category, receipt};
+  const error = validateExpense(expense, categorias); if (error) throw fail(error);
   if (receipt && !receiptValid(receipt)) throw fail('Adjunta un PDF, PNG, JPEG o WebP válido de hasta 5 MB.');
   return expense;
 }
@@ -108,24 +110,54 @@ export async function createApp({mongoUri = process.env.MONGODB_URI, mongoDataba
         queue = resultado.catch(() => {}); return resultado;
       }
       function snapshot() {
-        return {initialCapital: state.initialCapital, capital: state.initialCapital - state.expenses.filter(e => e.method === METHODS[0]).reduce((sum, e) => sum + e.amount, 0), expenses: state.expenses.map(e => ({...e, receipt: e.receipt ? {name: e.receipt.name, url: '/api/receipts/' + e.id} : null})), categories: CATEGORIES, methods: METHODS, subscriptions: state.subscriptions.map(item => ({...item, next: item.active ? nextSubscriptionDate(item.day) : null})).sort((a, b) => (a.next || '9999').localeCompare(b.next || '9999'))};
+        return {initialCapital: state.initialCapital, capital: resumirCartera(state).capital, resumenCuentas: resumirCartera(state), expenses: state.expenses.map(e => ({...e, receipt: e.receipt ? {name: e.receipt.name, url: '/api/receipts/' + e.id} : null})), categories: categoriasUsuario(state).filter(c=>c.activo).map(c=>c.nombre), categoriasGestion:categoriasUsuario(state), methods: METHODS, subscriptions: state.subscriptions.map(item => ({...item, next: item.active ? nextSubscriptionDate(item.day) : null})).sort((a, b) => (a.next || '9999').localeCompare(b.next || '9999'))};
       }
+      const mes = url.searchParams.get('mes') || localDate().slice(0, 7);
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) throw fail('Mes inválido.');
+      const categoria=url.pathname.match(/^\/api\/categorias(?:\/([^/]+))?$/);
+      if(categoria){const id=categoria[1];if(req.method==='GET'&&!id)return send(200,categoriasUsuario(state));
+        if((req.method==='POST'&&!id)||(req.method==='PUT'&&id)||(req.method==='DELETE'&&id)){const entrada=req.method==='DELETE'?{activo:false}:await body(req,16384);await mutate(next=>guardarCategoria(next,entrada,id));return send(req.method==='POST'?201:200,snapshot());}}
+      const recurso = url.pathname.match(/^\/api\/(cuentas|tarjetas|objetivos)(?:\/([^/]+))?$/);
+      if (recurso) {
+        const [, tipo, id] = recurso;
+        if (req.method === 'GET') {
+          const resumen = resumirCartera(state, mes); const lista = tipo === 'cuentas' ? resumen.cuentas : tipo === 'tarjetas' ? resumen.tarjetas : resumen.metas;
+          if (id) {const valor = lista.find(v => v.id === id); if (!valor) throw fail('Recurso no encontrado.', 404); return send(200, valor);}
+          return send(200, lista);
+        }
+        if (req.method === 'POST' && !id || req.method === 'PUT' && id) {
+          const entrada = await body(req, 16384);
+          await mutate(next => {
+            if (Object.hasOwn(entrada, 'activo') && id) {
+              if (typeof entrada.activo !== 'boolean') throw fail('Estado inválido.');
+              const accion = tipo === 'cuentas' ? archivarCuenta : tipo === 'tarjetas' ? archivarTarjeta : archivarMeta; accion(next, id, entrada.activo);
+            } else {const guardar = tipo === 'cuentas' ? guardarCuenta : tipo === 'tarjetas' ? guardarTarjeta : guardarMeta; guardar(next, entrada, id);}
+          }); return send(req.method === 'POST' ? 201 : 200, snapshot());
+        }
+        if (req.method === 'DELETE' && id) {await mutate(next => {const accion = tipo === 'cuentas' ? archivarCuenta : tipo === 'tarjetas' ? archivarTarjeta : archivarMeta; accion(next, id);}); return send(200, snapshot());}
+      }
+      const anulacion=url.pathname.match(/^\/api\/operaciones\/([^/]+)\/anular$/);
+      if(req.method==='POST'&&anulacion){await mutate(next=>anularOperacion(next,anulacion[1]));return send(200,snapshot());}
+      if (req.method === 'GET' && url.pathname === '/api/operaciones') return send(200, resumirCartera(state).operaciones);
+      if (req.method === 'POST' && url.pathname === '/api/operaciones') {const entrada = await body(req, 16384);await mutate(next => registrarOperacion(next, entrada));return send(201, snapshot());}
+      if (req.method === 'GET' && url.pathname === '/api/ahorros') {const r = resumirCartera(state); return send(200, {metas: r.metas, aportes: r.aportes, reservado: r.reservado, disponible: r.disponible, capital: r.capital});}
+      if (req.method === 'POST' && url.pathname === '/api/ahorros') {const entrada = await body(req, 16384);await mutate(next => registrarAhorro(next, entrada));return send(201, snapshot());}
       if (req.method === 'GET') {
         if (url.pathname === '/api/state') return send(200, snapshot());
         if (url.pathname === '/api/capital') {const {initialCapital, capital} = snapshot(); return send(200, {initialCapital, capital});}
         if (url.pathname === '/api/expenses') return send(200, snapshot().expenses);
         if (url.pathname === '/api/subscriptions') return send(200, snapshot().subscriptions);
-        if (url.pathname === '/api/categories') return send(200, CATEGORIES);
+        if (url.pathname === '/api/categories') return send(200, categoriasUsuario(state).filter(c=>c.activo).map(c=>c.nombre));
         if (url.pathname === '/api/methods') return send(200, METHODS);
       }
       if (req.method === 'PUT' && url.pathname === '/api/capital') {
         const input = await body(req); const amount = input.amount === '0' || input.amount === '0.00' ? 0 : typeof input.amount === 'string' ? parseAmount(input.amount) : null;
         if (amount === null) throw fail('Ingresa un capital inicial válido.');
-        await mutate(next => {next.initialCapital = amount;}); return send(200, snapshot());
+        await mutate(next => {const antes=structuredClone(next);next.initialCapital = amount;if(next.cartera)validarSaldos(next, antes);}); return send(200, snapshot());
       }
       if (req.method === 'POST' && url.pathname === '/api/expenses') {
-        const expense = expenseFrom(await body(req));
-        await mutate(next => {next.expenses.unshift(expense);}); return send(201, snapshot());
+        const entrada = await body(req);
+        await mutate(next => {const antes=structuredClone(next);const expense = asignarOrigen(next, expenseFrom(entrada,undefined,categoriasUsuario(next).filter(c=>c.activo).map(c=>c.nombre)), entrada);next.expenses.unshift(expense);if(next.cartera)validarSaldos(next, antes);}); return send(201, snapshot());
       }
       const expenseMatch = url.pathname.match(/^\/api\/expenses\/([^/]+)$/);
       if (expenseMatch && req.method === 'GET') {
@@ -138,14 +170,16 @@ export async function createApp({mongoUri = process.env.MONGODB_URI, mongoDataba
         await mutate(next => {
           const index = next.expenses.findIndex(item => item.id === expenseMatch[1]);
           if (index < 0) throw fail('Movimiento no encontrado.',404);
-          if (input) next.expenses[index] = expenseFrom(input, next.expenses[index]);
+          const antes=structuredClone(next);
+          if (input) next.expenses[index] = asignarOrigen(next, expenseFrom(input, next.expenses[index],[...categoriasUsuario(next).filter(c=>c.activo).map(c=>c.nombre),next.expenses[index].category]), input, next.expenses[index]);
           else next.expenses.splice(index,1);
+          if(next.cartera)validarSaldos(next, antes);
         });
         return send(200, snapshot());
       }
       if (req.method === 'POST' && url.pathname === '/api/subscriptions') {
-        const subscription = subscriptionFrom(await body(req));
-        await mutate(next => {next.subscriptions.push(subscription);});
+        const entrada=await body(req);
+        await mutate(next => {next.subscriptions.push(vincularSuscripcion(next,subscriptionFrom(entrada),entrada));});
         return send(201,snapshot());
       }
       const subscriptionMatch = url.pathname.match(/^\/api\/subscriptions\/([^/]+)$/);
@@ -155,11 +189,11 @@ export async function createApp({mongoUri = process.env.MONGODB_URI, mongoDataba
         return send(200, suscripcion);
       }
       if (subscriptionMatch && ['PUT','DELETE'].includes(req.method)) {
-        const input = req.method === 'PUT' ? subscriptionFrom(await body(req), subscriptionMatch[1]) : null;
+        const input = req.method === 'PUT' ? await body(req) : null;
         await mutate(next => {
           const index = next.subscriptions.findIndex(item => item.id === subscriptionMatch[1]);
           if (index < 0) throw fail('Suscripción no encontrada.',404);
-          if (input) next.subscriptions[index] = input;
+          if (input) next.subscriptions[index] = vincularSuscripcion(next,subscriptionFrom(input,subscriptionMatch[1]),input,next.subscriptions[index]);
           else next.subscriptions.splice(index,1);
         });
         return send(200,snapshot());

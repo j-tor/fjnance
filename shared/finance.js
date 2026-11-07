@@ -32,7 +32,7 @@ export function validDate(value) {
   return !Number.isNaN(date.getTime()) && localDate(date) === value;
 }
 
-export function validateExpense(expense) {
+export function validateExpense(expense, categorias = CATEGORIES) {
   if (!Number.isSafeInteger(expense.amount) || expense.amount <= 0) {
     return "Ingresa un monto mayor a cero con hasta dos decimales.";
   }
@@ -45,8 +45,8 @@ export function validateExpense(expense) {
   if (!METHODS.includes(expense.method)) {
     return "Selecciona un método de pago.";
   }
-  if (!CATEGORIES.includes(expense.category)) {
-    return "Selecciona una de las cinco categorías.";
+  if (!categorias.includes(expense.category)) {
+    return "Selecciona una categoría disponible.";
   }
   return null;
 }
@@ -71,7 +71,7 @@ export function monthSummary(state, month) {
   const expenses = state.expenses.filter(
     item => item.date.slice(0, 7) === month,
   );
-  const totals = CATEGORIES.map(category => ({
+  const totals = [...new Set([...(state.categories || CATEGORIES), ...expenses.map(e=>e.category)])].map(category => ({
     category,
     amount: expenses
       .filter(item => item.category === category)
